@@ -12,34 +12,40 @@ import os
 from numpy.fft import *
 import copy
 
+# создание выборки для формирования датасета
 def make_batch(file_name):
     fi_num=0
     line=[]
     total_len_f=sum([1 for line in open(file_name,'r')])
     print('line num:'+ str(total_len_f))
-    set_len = total_len_f#4000000#
-
+    set_len = total_len_f#
+    # открываем файл формата "qwe_nn_data.txt"
     with open(file_name,'r') as file:
         
         for line_for_cnt in file:
+            # пропускаем начало (в последней версии это необязательно)
             if (fi_num%10000==0):
+                #выводим информацию о том сколько процентов файла считано
                 print('line read:'+str(fi_num/total_len_f*100)+'%')
             fi_num=fi_num+1
-            if(fi_num>10 and fi_num<set_len):#140000
+            if(fi_num>10 and fi_num<set_len):#
                 line_for_cnt=line_for_cnt.replace('\n','')
                 line_for_cnt=line_for_cnt.split(',')
                 line_for_cnt=[float(line_for_cnt[i]) for i in range(len(line_for_cnt))]
+                # уменьшаем амплитуду, чтобы она стала порядка 1 (возможно стоит использовать нормировку)
                 line.append([line_for_cnt[1]/100, line_for_cnt[2]/100, line_for_cnt[3]/100, line_for_cnt[4]/100])# 0,0,0,0#line_for_cnt[14], line_for_cnt[16], line_for_cnt[19], line_for_cnt[21]
                 
     return line
 
+
+#считывание данных из датасета в списки
 def get_batch(file_name):
     fi_num=0
     line=[]
     total_len_f=sum([1 for line in open(file_name,'r')])
     print('line num:'+ str(total_len_f))
     set_len = total_len_f#
-
+    #открываем файл датасета
     with open(file_name,'r') as file:  
         
         sig=[]
@@ -63,10 +69,10 @@ def get_batch(file_name):
                 x.append([float(k) for k in line_for_cnt[i*sig_len:(i+1)*sig_len]])
             sig.append(x)
             y.append(line_for_cnt[len(line_for_cnt)-1])
-                
-    return sig,y,sig_len,ch_num
+            
+    return sig,y,sig_len,ch_num# sig список содержащий отсчеты сигналов для каждого канала, у - метки классов для сигналов, sig_len - длина сигналов, ch_num - количество каналов
 
-
+# сверточный слой ввиде функции
 def create_new_conv_layer(input_data, num_input_channels, num_filters, filter_h, filter_w, pool_shape, name):
     
     conv_filt_shape = [filter_h, filter_w, num_input_channels,
@@ -89,7 +95,7 @@ def create_new_conv_layer(input_data, num_input_channels, num_filters, filter_h,
 
     return out_layer, weights
 
-
+#архитектура нейронной сети
 def simulator_classifier(input_data,  sig_len, n, nd_pl, ch_num,  cl_num, reuse=False):  
     #sig_len = len(input_data[0])
     h_size=sig_len
@@ -100,6 +106,7 @@ def simulator_classifier(input_data,  sig_len, n, nd_pl, ch_num,  cl_num, reuse=
         layer2, weights1 = create_new_conv_layer(layer1, m, m, 20, 4, 4, name='layer2')
         flattened = tf.reshape(layer2, [-1, int(sig_len*m*ch_num/16)])
         h2t = tf.layers.dense(flattened, n, activation=None, kernel_initializer=tf.contrib.layers.xavier_initializer())
+        # бутылочное горлышко
         bn = (h2t)*nd_pl
 
     with tf.variable_scope('sim', reuse=reuse):
@@ -130,7 +137,7 @@ def prob(win, test_prob, cl):
         test_all.append(sum(tr_test_all[pr])) 
     return test_all, round(probab/total_len, 2)
 
-
+#рисунки с СКО
 def fig(win, test_prob, title):
     # win=10
     total_len=int(len(test_prob)/win)
