@@ -16,18 +16,19 @@ file_name='train_dataset_set_7_1000.txt'#_'+prep+'
 learning_rate=0.0001
 batch_size=100
 epochs=60
-
+#считываем тренировочный и тестовый датасеты
 sig,y,sig_len,ch_num=func.get_batch(file_name)
 sigt,yt,sig_lent,ch_numt=func.get_batch('test_dataset_set_7_1000.txt')# read file with dataset
 print(yt)
 
-#list of drugs
+#список препаратов
 pharm=['gab','dia','car','pre','esl','phe','are','cor','pic','pil','chl']#
 cl_num=len(pharm)
 
 osob_num=5
 nn=osob_num*len(pharm)
 
+#записываем классы в формате one-hoy
 cl=[]
 for i in y:
     for j in pharm:
@@ -44,13 +45,15 @@ for i in yt:
 # print(y[0:10])
 # print(cl[0:10])
 # print(cl)
+
+
 r=[i for i in range(len(cl))]
 rt=[i for i in range(len(clt))]
 random.shuffle(r)
 random.shuffle(rt)
 # print(r)
 
-
+#формируем перемешанные и не перемешанные сигналы
 ra=[(random.random()+0.5) for i in range(len(cl))]
 sig_n=[[[sig[i][k][j]*ra[i] for j in range(len(sig[i][k]))] for k in range(len(sig[i]))] for i in range(len(cl))]
 sig_nt=[[[sigt[i][k][j] for j in range(len(sigt[i][k]))] for k in range(len(sigt[i]))] for i in range(len(clt))]
@@ -63,8 +66,8 @@ cl_rt=[clt[i] for i in rt]
 
 
 step=5
-n=100
-n_min=1
+n=100 # максимальный размер бутылочного горлышка при использовании truncation
+n_min=1 # минимальный размер бутылочного горлышка при использовании truncation
 x_data = tf.placeholder(tf.float32, [None, ch_num, sig_len])
 #tr_ph_shaped = tf.reshape(tr_ph, [-1, sig_len , 1])
 x_shaped = tf.reshape(x_data, [-1, sig_len , ch_num])
@@ -110,17 +113,22 @@ with tf.Session() as sess:
             batch = sig_r[(i*batch_size):((i+1)*batch_size)]
             batch_y=cl_r[(i*batch_size):((i+1)*batch_size)]
             batch_nd=nd[(i*batch_size):((i+1)*batch_size)]
+            # режим обучения определяется тем какую из двух следующих строк закомментировать 
+            # первую - работает только классификатор. вторую -только автоэнкодер.
+            # если не комментировать строки работает смешанная архитектура
             # _= sess.run(optimiser_sim, feed_dict={x_data:batch, nd_pl: batch_nd, y:batch_y})
             _= sess.run(optimiser_clas, feed_dict={x_data:batch, nd_pl: batch_nd, y:batch_y})
+        # оценка точностей
         yo_c=sess.run([accuracy_clas], feed_dict={x_data:sig_rt[0:500], nd_pl: nd_test[0:500], y: cl_rt[0:500]})
         yo_s=sess.run([accuracy_sim], feed_dict={x_data:sig_rt[0:500], nd_pl: nd_test[0:500], y: cl_rt[0:500]})
         yo_c_2=sess.run([accuracy_clas], feed_dict={x_data:sig_r[0:500], nd_pl: nd_test[0:500], y: cl_r[0:500]})
         pr=[]
         mn=len(pharm)
         
-        #probability of correct detection
+        #оценка вероятности правильного определения класса
         for ui in range(nn):
             yo_all=sess.run(out_clas, feed_dict={x_data:sig_nt[int(ui*len(sig_nt)/nn):int((ui+1)*len(sig_nt)/nn)], nd_pl: nd_test[int(ui*len(sig_nt)/nn):int((ui+1)*len(sig_nt)/nn)], y: clt[int(ui*len(sig_nt)/nn):int((ui+1)*len(sig_nt)/nn)]}).tolist()
+            # усредненная оценка по последовательным сигналам
             a,b =func.prob(10, yo_all, clt[int(ui*len(sig_nt)/nn):int((ui+1)*len(sig_nt)/nn)])
             if (ui>nn-7):
                 print(a)
@@ -141,16 +149,17 @@ with tf.Session() as sess:
 
         train_cu.append(sum(pr)/len(pr))
         # train_cu_s.append(yo_s)
+    # отрисовка кривых обучения
     fig, ax = plt.subplots()
     ax.plot(train_cu)
     ax.grid()
     ax.set_xlabel('number of epochs')
     ax.set_ylabel('probability of correct detection')
     plt.show()
-    
+    # сохраняем обученную сеть
     saver.save(sess, "checkpoint_dir/model.ckpt")
 
-
+    # определяем кластеры
     clr=['ro','bo','go','yo','go','yo']#,'wo'
     avvr=10
     dist_list_total=[]
@@ -169,6 +178,8 @@ with tf.Session() as sess:
             
         print(avr_claster)
         print(len(avr_claster))
+        
+        # определяем дистанцию между класерами
         dist_list=[]
         for c in range(cl_num):
             sum_sqr = 0
@@ -183,7 +194,7 @@ with tf.Session() as sess:
             print(distance)
             dist_list.append(distance)
         dist_list_total.append(dist_list)
-
+    # рисуем СКО
     for p in range(cl_num):
 
         sred_res=[sum([dist_list_total[i][p][j] for i in range(len(dist_list_total))])/len(dist_list_total) for j in range(len(dist_list_total[0][0]))]
@@ -198,7 +209,7 @@ with tf.Session() as sess:
         plt.title(pharm[p])
         plt.show()
 
-
+    # рисуем график качества работы сети от количества нейронов в бутылочном горлышке обученном с truncation
     y_list_c=[]
     k=0
     for t in range(n_min,n,step):
