@@ -9,7 +9,7 @@ import sounddevice as sd
 import tensorflow as tf
 from scipy import signal
 
-cl_num=10# количество классо при обучении
+cl_num=10 # количество классов при обучении
 ch_num=4
 
 sig=[]
