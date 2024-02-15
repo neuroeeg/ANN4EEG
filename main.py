@@ -113,8 +113,8 @@ with tf.Session() as sess:
             batch = sig_r[(i*batch_size):((i+1)*batch_size)]
             batch_y=cl_r[(i*batch_size):((i+1)*batch_size)]
             batch_nd=nd[(i*batch_size):((i+1)*batch_size)]
-            # режим обучения определяется тем какую из двух следующих строк закомментировать 
-            # первую - работает только классификатор. вторую -только автоэнкодер.
+            # режим обучения определяется тем, какую из двух следующих строк закомментировать 
+            # первую - работает только классификатор; вторую - только автоэнкодер.
             # если не комментировать строки работает смешанная архитектура
             # _= sess.run(optimiser_sim, feed_dict={x_data:batch, nd_pl: batch_nd, y:batch_y})
             _= sess.run(optimiser_clas, feed_dict={x_data:batch, nd_pl: batch_nd, y:batch_y})
