@@ -15,5 +15,7 @@ https://cmi.to/r2/
 
 <h2>Authors</h2>
 
-1. Alexey A. Nevzorov, Institute of Mathematics and Information Technology, Volgograd State University, Volgograd, Russian Federation
-2. Konstantin Y. Kalitin, Department of Pharmacology and Bioinformatics, Volgograd State Medical University, Volgograd, Russian Federation
+1. Alexey A. Nevzorov, Institute of Mathematics and Information Technology, Volgograd State University
+2. Konstantin Y. Kalitin, Department of Pharmacology and Bioinformatics, Volgograd State Medical University
+3. Olga Y. Mukha, Department of Pharmacology and Bioinformatics, Volgograd State Medical University
+4. Denis A. Babkov, Scientific Center for Innovative Drugs, Volgograd State Medical University
